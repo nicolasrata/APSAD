@@ -24,108 +24,142 @@ Ce dépôt contient les fichiers HTML individuels du **Référentiel APSAD D20 s
 ### Prérequis
 
 ```bash
-pip install -r requirements.txt
+pip install beautifulsoup4
 ```
 
-ou
+(ou `pip install -r requirements.txt` pour installer toutes les dépendances)
+
+### 🎯 Trois versions disponibles
+
+#### ⭐ Option 1 : Version locale (RECOMMANDÉE)
 
 ```bash
-pip install requests beautifulsoup4
+python reconstruct_local.py
 ```
 
-### 🎯 Deux versions disponibles
-
-#### Option 1 : Version complète (avec mise en page)
-
-```bash
-python reconstruct_document.py
-```
+**Avantages :**
+- ✅ Fonctionne sans connexion internet (après téléchargement)
+- ✅ Pas besoin de l'API GitHub
+- ✅ Plus rapide
+- ✅ Lit directement les fichiers HTML locaux
 
 **Résultat** : `APSAD_D20_Document_Complet.html`
-- ✅ Préserve la mise en page originale (positions, styles CSS)
-- ✅ Fidèle au PDF d'origine
-- ⚠️ Fichier plus volumineux
-- 👁️ Idéal pour impression ou consultation identique à l'original
 
-#### Option 2 : Version simplifiée (texte seul) - **RECOMMANDÉE** 
+#### Option 2 : Version simplifiée (avec API GitHub)
 
 ```bash
 python reconstruct_simple.py
 ```
 
 **Résultat** : `APSAD_D20_Document_Simplifie.html`
+- ✅ Télécharge depuis GitHub automatiquement
 - ✅ Mise en page moderne et épurée
 - ✅ Table des matières interactive
-- ✅ Plus léger et rapide à charger
-- ✅ Meilleure lisibilité à l'écran
-- 📱 Responsive (adapté mobile/tablette)
-- 🔍 Texte facilement sélectionnable et recherchable
+- ⚠️ Nécessite connexion internet et repo public
+
+#### Option 3 : Version complète (avec API GitHub)
+
+```bash
+python reconstruct_document.py
+```
+
+**Résultat** : `APSAD_D20_Document_Complet.html`
+- ✅ Préserve la mise en page originale
+- ✅ Télécharge depuis GitHub automatiquement
+- ⚠️ Nécessite connexion internet et repo public
+- ⚠️ Fichier plus volumineux
+
+### 🔑 Configuration pour l'API GitHub (si nécessaire)
+
+Si tu obtiens une erreur 404 avec les scripts qui utilisent l'API GitHub, tu as deux options :
+
+**Option A - Utilise le script local (recommandé) :**
+```bash
+python reconstruct_local.py
+```
+
+**Option B - Configure un token GitHub :**
+```bash
+# 1. Crée un token sur https://github.com/settings/tokens
+# 2. Configure-le dans ton environnement
+export GITHUB_TOKEN="ton_token_ici"  # Linux/Mac
+set GITHUB_TOKEN=ton_token_ici       # Windows CMD
+$env:GITHUB_TOKEN="ton_token_ici"    # Windows PowerShell
+```
 
 ## 🎯 Fonctionnement des scripts
 
-### Script complet (`reconstruct_document.py`)
+### Script local (`reconstruct_local.py`) - ⭐ RECOMMANDÉ
 
-1. **Récupération** : Télécharge tous les fichiers HTML depuis GitHub
-2. **Extraction** : Extrait les `<div class="textLayer">` avec leurs styles
-3. **Tri** : Ordonne les chapitres (Pages liminaires → Chapitres → Annexes)
-4. **Fusion** : Assemble tout dans un HTML avec styles inline
-5. **Génération** : Crée un document fidèle à la mise en page originale
+1. **Recherche** : Cherche les fichiers HTML dans le dossier courant
+2. **Extraction** : Extrait le texte des `textLayer`
+3. **Tri** : Ordonne les chapitres automatiquement
+4. **Génération** : Crée un document HTML moderne
 
 ### Script simplifié (`reconstruct_simple.py`)
 
-1. **Récupération** : Télécharge tous les fichiers HTML depuis GitHub
-2. **Extraction** : Extrait uniquement le texte des `textLayer`
-3. **Nettoyage** : Supprime les styles de positionnement
-4. **Organisation** : Structure en chapitres avec table des matières
-5. **Génération** : Crée un document moderne et lisible
+1. **Téléchargement** : Utilise l'API GitHub pour récupérer les fichiers
+2. **Extraction** : Extrait uniquement le texte
+3. **Organisation** : Structure avec table des matières
+4. **Génération** : Document moderne et lisible
+
+### Script complet (`reconstruct_document.py`)
+
+1. **Téléchargement** : Utilise l'API GitHub
+2. **Extraction** : Préserve tous les styles CSS
+3. **Fusion** : Assemble avec mise en page originale
+4. **Génération** : Document fidèle au PDF
 
 ## 📊 Comparaison des versions
 
-| Caractéristique | Version complète | Version simplifiée |
-|----------------|------------------|-------------------|
-| Taille fichier | 🔴 Volumineux (~5-10 MB) | 🟢 Léger (~1-2 MB) |
-| Fidélité originale | 🟢 Identique au PDF | 🟡 Structure préservée |
-| Lisibilité | 🟡 Comme le PDF | 🟢 Optimisée |
-| Recherche texte | 🟡 Moyenne | 🟢 Excellente |
-| Impression | 🟢 Parfaite | 🟢 Bonne |
-| Mobile | 🟡 Moyen | 🟢 Excellent |
-| Table des matières | ❌ Non | 🟢 Interactive |
-| **Recommandation** | Archive/impression | **Consultation** ⭐ |
+| Caractéristique | Script local | Version simplifiée | Version complète |
+|----------------|--------------|-------------------|------------------|
+| Connexion internet | ❌ Non | ✅ Oui | ✅ Oui |
+| API GitHub | ❌ Non | ✅ Oui | ✅ Oui |
+| Vitesse | 🟢 Rapide | 🟡 Moyenne | 🔴 Lente |
+| Taille fichier | 🟢 Léger | 🟢 Léger | 🔴 Lourd |
+| Table des matières | ✅ Oui | ✅ Oui | ❌ Non |
+| Fidélité originale | 🟡 Bonne | 🟡 Bonne | 🟢 Parfaite |
+| **Recommandation** | ⭐ **Par défaut** | Usage avancé | Impression |
 
 ## 📝 Recommandations d'utilisation
 
-**Utilise la version complète si :**
-- Tu veux une reproduction exacte du PDF
-- Tu as besoin de l'aspect visuel original
-- Tu vas imprimer le document
+**Utilise `reconstruct_local.py` si :**
+- Tu as téléchargé le repo en ZIP (la plupart des cas)
+- Tu veux la solution la plus simple et rapide
+- Tu n'as pas besoin de connexion internet
 
-**Utilise la version simplifiée si :**
-- Tu veux consulter le document à l'écran
-- Tu as besoin de rechercher du texte rapidement
-- Tu veux un chargement rapide
-- Tu consultes sur mobile/tablette
+**Utilise `reconstruct_simple.py` si :**
+- Tu veux télécharger automatiquement depuis GitHub
+- Le repo est public
+- Tu as une connexion internet stable
+
+**Utilise `reconstruct_document.py` si :**
+- Tu veux une reproduction exacte du PDF
+- Tu vas imprimer le document
+- La fidélité visuelle est importante
 
 ## 🔍 Personnalisation
 
 Les scripts sont modulables. Tu peux modifier :
 
-**Dans `reconstruct_document.py` :**
-- Les styles CSS dans `generate_complete_html()`
+**Dans `reconstruct_local.py` :**
+- Les styles CSS (ligne ~70)
 - Les couleurs de chapitres
-- La mise en page des pages
-
-**Dans `reconstruct_simple.py` :**
-- Les styles CSS (couleurs, typographie)
 - La structure de la table des matières
-- Les séparateurs de pages
+
+**Dans les autres scripts :**
+- Filtrer certains chapitres
+- Changer la mise en page
+- Exporter en d'autres formats
 
 ## 🛠️ Exemples d'usage avancé
 
 ### Extraire seulement certains chapitres
 
 ```python
-# Dans main(), filtre les fichiers
-sorted_files = [f for f in sorted_files if 'Chapitre 2' in f['name']]
+# Dans reconstruct_local.py, après la ligne "html_files = glob.glob("*.html")"
+html_files = [f for f in html_files if 'Chapitre 2' in f or 'Chapitre 3' in f]
 ```
 
 ### Générer un fichier Markdown
@@ -144,8 +178,11 @@ def extract_to_markdown(chapters_data):
 ### Exporter en PDF
 
 ```bash
-# Utilise wkhtmltopdf ou similar
-wkhtmltopdf APSAD_D20_Document_Simplifie.html APSAD_D20.pdf
+# Utilise wkhtmltopdf
+wkhtmltopdf APSAD_D20_Document_Complet.html APSAD_D20.pdf
+
+# Ou avec weasyprint
+weasyprint APSAD_D20_Document_Complet.html APSAD_D20.pdf
 ```
 
 ## ⚠️ Note légale
@@ -166,10 +203,22 @@ Pour améliorer les scripts :
 ## 📞 Support
 
 Si tu rencontres des problèmes :
-1. Vérifie que tu as installé les dépendances (`pip install -r requirements.txt`)
-2. Vérifie ta connexion internet (les scripts téléchargent depuis GitHub)
-3. Consulte les messages d'erreur détaillés dans la console
-4. Ouvre une issue sur GitHub si le problème persiste
+
+### Erreur "No module named 'bs4'"
+```bash
+pip install beautifulsoup4
+```
+
+### Erreur 404 avec l'API GitHub
+Utilise `reconstruct_local.py` à la place.
+
+### "Aucun fichier HTML trouvé"
+Assure-toi d'être dans le dossier contenant les fichiers HTML.
+
+### Autres problèmes
+1. Vérifie ta version de Python (3.7+)
+2. Consulte les messages d'erreur détaillés
+3. Ouvre une [issue sur GitHub](https://github.com/nicolasrata/APSAD/issues)
 
 ## 📜 License
 
