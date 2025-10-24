@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script de reconstruction LOCAL - VERSION HYBRIDE
-Préserve les positions mais force le texte visible
+Script de reconstruction LOCAL - VERSION FINALE AVEC IMAGES
+Préserve les positions, force le texte visible ET inclut les images
 """
 
 import os
@@ -9,6 +9,7 @@ import glob
 from bs4 import BeautifulSoup
 import re
 from collections import OrderedDict
+import base64
 
 def extract_chapter_number(filename):
     """Extrait le numéro de chapitre/annexe pour le tri"""
@@ -36,41 +37,134 @@ def read_html_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
 
-def extract_and_fix_text_layers(html_content):
+def extract_images_from_canvas(html_content):
     """
-    Extrait les textLayer et force le texte visible
+    Extrait les images des balises canvas (si présentes)
     """
     soup = BeautifulSoup(html_content, 'html.parser')
+    canvases = soup.find_all('canvas')
+    
+    images_html = []
+    for canvas in canvases:
+        # Récupérer les attributs du canvas
+        canvas_html = str(canvas)
+        images_html.append(canvas_html)
+    
+    return images_html
+
+def extract_images_from_img_tags(html_content):
+    """
+    Extrait les balises <img> présentes dans le HTML
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    images = soup.find_all('img')
+    
+    images_html = []
+    for img in images:
+        images_html.append(str(img))
+    
+    return images_html
+
+def extract_page_content(html_content):
+    """
+    Extrait le contenu complet d'une page : textLayer + images + canvas
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Chercher les div qui contiennent le contenu d'une page
+    # Généralement dans des div avec classe 'page'
+    pages = soup.find_all('div', class_='page')
+    
+    if not pages:
+        # Si pas de div.page, chercher d'autres structures communes
+        pages = soup.find_all('div', id=re.compile(r'page\d+'))
+    
+    pages_content = []
+    
+    for page in pages:
+        # Créer une copie de la page
+        page_copy = BeautifulSoup(str(page), 'html.parser')
+        
+        # Trouver le textLayer dans cette page
+        text_layer = page_copy.find('div', class_='textLayer')
+        
+        if text_layer:
+            # Forcer le texte visible dans le textLayer
+            for div in text_layer.find_all('div', recursive=False):
+                if 'endOfContent' in div.get('class', []):
+                    continue
+                
+                style = div.get('style', '')
+                style = re.sub(r'color:\s*transparent\s*;?', '', style)
+                
+                if 'color:' not in style:
+                    style += '; color: #000;'
+                else:
+                    style = re.sub(r'color:\s*[^;]+', 'color: #000', style)
+                
+                div['style'] = style
+        
+        # Récupérer tout le contenu de la page (textLayer + canvasWrapper + images)
+        page_html = str(page_copy)
+        
+        if len(page_html) > 100:
+            pages_content.append(page_html)
+    
+    return pages_content
+
+def extract_text_and_images(html_content):
+    """
+    Nouvelle méthode : extrait textLayer ET cherche les images/canvas
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Méthode 1: Chercher les pages complètes
+    pages_content = extract_page_content(html_content)
+    if pages_content:
+        return pages_content
+    
+    # Méthode 2: Si pas de structure de page, extraire séparément
     text_layers = soup.find_all('div', class_='textLayer')
+    canvas_wrappers = soup.find_all('div', class_='canvasWrapper')
     
     pages_html = []
     
-    for layer in text_layers:
-        # Parcourir tous les divs enfants
-        for div in layer.find_all('div', recursive=False):
-            # Ignorer les divs avec classe endOfContent
-            if 'endOfContent' in div.get('class', []):
-                continue
-            
-            # Modifier le style pour forcer le texte visible
-            style = div.get('style', '')
-            
-            # Supprimer color: transparent
-            style = re.sub(r'color:\s*transparent\s*;?', '', style)
-            
-            # Forcer la couleur noire
-            if 'color:' not in style:
-                style += '; color: #000;'
-            else:
-                style = re.sub(r'color:\s*[^;]+', 'color: #000', style)
-            
-            div['style'] = style
+    # Combiner textLayer et canvasWrapper par paires
+    max_len = max(len(text_layers), len(canvas_wrappers))
+    
+    for i in range(max_len):
+        page_parts = []
         
-        # Récupérer le HTML modifié
-        layer_html = str(layer)
+        # Ajouter le canvas si présent
+        if i < len(canvas_wrappers):
+            canvas_html = str(canvas_wrappers[i])
+            page_parts.append(canvas_html)
         
-        if layer_html and len(layer_html) > 100:
-            pages_html.append(layer_html)
+        # Ajouter le textLayer si présent
+        if i < len(text_layers):
+            text_layer = text_layers[i]
+            
+            # Forcer le texte visible
+            for div in text_layer.find_all('div', recursive=False):
+                if 'endOfContent' in div.get('class', []):
+                    continue
+                
+                style = div.get('style', '')
+                style = re.sub(r'color:\s*transparent\s*;?', '', style)
+                
+                if 'color:' not in style:
+                    style += '; color: #000;'
+                else:
+                    style = re.sub(r'color:\s*[^;]+', 'color: #000', style)
+                
+                div['style'] = style
+            
+            text_html = str(text_layer)
+            page_parts.append(text_html)
+        
+        if page_parts:
+            combined_html = '<div class="page-content">\n' + '\n'.join(page_parts) + '\n</div>'
+            pages_html.append(combined_html)
     
     return pages_html
 
@@ -83,15 +177,15 @@ def create_chapter_title(filename):
         return title
     return 'Section'
 
-def generate_html_hybrid(chapters_data):
-    """Génère le HTML avec mise en page mais texte visible"""
+def generate_html_with_images(chapters_data):
+    """Génère le HTML avec mise en page, texte visible ET images"""
     
     html = """<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APSAD D20 - Document complet</title>
+    <title>APSAD D20 - Document complet avec images</title>
     <style>
         /* Styles de base */
         * {
@@ -148,7 +242,12 @@ def generate_html_hybrid(chapters_data):
             border: 1px solid #ddd;
             padding: 40px 20px;
             min-height: 900px;
-            max-width: 800px;
+            max-width: 900px;
+        }
+        .page-content {
+            position: relative;
+            width: 100%;
+            min-height: 800px;
         }
         .page-number {
             position: absolute;
@@ -160,6 +259,26 @@ def generate_html_hybrid(chapters_data):
             background: #f9f9f9;
             padding: 5px 10px;
             border-radius: 3px;
+            z-index: 10;
+        }
+        
+        /* Styles pour les canvas (images de fond) */
+        .canvasWrapper {
+            position: relative;
+            width: 100%;
+        }
+        .canvasWrapper canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: auto;
+        }
+        
+        /* Images */
+        img {
+            max-width: 100%;
+            height: auto;
         }
         
         /* Styles des textLayer - FORCER LE TEXTE VISIBLE */
@@ -173,14 +292,14 @@ def generate_html_hybrid(chapters_data):
             opacity: 1 !important;
             line-height: 1.2;
             min-height: 800px;
+            z-index: 2; /* Au-dessus des canvas */
         }
         .textLayer > div {
-            color: #000 !important;  /* FORCER NOIR */
+            color: #000 !important;
             position: absolute;
             white-space: pre;
             cursor: text;
             transform-origin: 0% 0%;
-            /* Supprimer toute transparence */
             opacity: 1 !important;
         }
         
@@ -188,6 +307,12 @@ def generate_html_hybrid(chapters_data):
         .textLayer * {
             color: #000 !important;
             opacity: 1 !important;
+        }
+        
+        /* Styles pour la structure de page complète */
+        .page {
+            position: relative;
+            width: 100%;
         }
         
         @media print {
@@ -252,7 +377,7 @@ def generate_html_hybrid(chapters_data):
             <h1>Référentiel APSAD D20</h1>
             <p>Installations photovoltaïques</p>
             <p style="font-size: 0.9em; color: #999; margin-top: 10px;">
-                Document complet avec mise en page
+                Document complet avec texte, mise en page et images
             </p>
         </div>
         
@@ -275,7 +400,7 @@ def generate_html_hybrid(chapters_data):
     # Statistiques
     total_pages = sum(len(pages) for pages in chapters_data.values())
     html += f"""        <div class="stats">
-            <strong>📊 Statistiques :</strong> {len(chapters_data)} sections • {total_pages} pages
+            <strong>📊 Statistiques :</strong> {len(chapters_data)} sections • {total_pages} pages • Images incluses
         </div>
 """
     
@@ -308,7 +433,7 @@ def generate_html_hybrid(chapters_data):
 
 def main():
     print("\n" + "="*70)
-    print("🔧 RECONSTRUCTION DOCUMENT APSAD D20 - VERSION FINALE")
+    print("🔧 RECONSTRUCTION APSAD D20 - VERSION FINALE AVEC IMAGES")
     print("="*70 + "\n")
     
     # Chercher les fichiers HTML
@@ -329,19 +454,19 @@ def main():
     print("   ✓ Ordre établi\n")
     
     # Extraction
-    print("📖 Extraction avec texte visible forcé...\n")
+    print("📖 Extraction : texte + images + mise en page...\n")
     chapters_data = OrderedDict()
     total_pages = 0
     
     for filepath in sorted_files:
         try:
             html_content = read_html_file(filepath)
-            pages_html = extract_and_fix_text_layers(html_content)
+            pages_html = extract_text_and_images(html_content)
             
             if pages_html:
                 chapters_data[filepath] = pages_html
                 total_pages += len(pages_html)
-                print(f"   ✓ {len(pages_html)} pages extraites")
+                print(f"   ✓ {len(pages_html)} pages extraites (texte + images)")
             else:
                 print(f"   ⚠️  Aucun contenu extrait")
                 
@@ -354,7 +479,7 @@ def main():
     
     # Génération
     print(f"\n📝 Génération du HTML final ({total_pages} pages)...")
-    final_html = generate_html_hybrid(chapters_data)
+    final_html = generate_html_with_images(chapters_data)
     
     # Sauvegarde
     output_file = "APSAD_D20_Document_Final.html"
@@ -365,7 +490,7 @@ def main():
     print(f"   📊 Taille : {len(final_html):,} caractères")
     print(f"   📄 Sections : {len(chapters_data)}")
     print(f"   📑 Pages : {total_pages}")
-    print(f"   🎨 Mise en page préservée + texte visible")
+    print(f"   🎨 Texte visible + Mise en page + Images")
     print(f"\n🌐 Ouvre le fichier :")
     print(f"   open {output_file}")
     print("\n" + "="*70)
