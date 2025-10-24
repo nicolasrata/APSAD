@@ -1,6 +1,6 @@
 # Référentiel APSAD D20 - Reconstruction de document
 
-Ce dépôt contient les fichiers HTML individuels du **Référentiel APSAD D20 sur les installations photovoltaïques**, ainsi qu'un script pour reconstruire le document complet.
+Ce dépôt contient les fichiers HTML individuels du **Référentiel APSAD D20 sur les installations photovoltaïques**, ainsi que des scripts pour reconstruire le document complet.
 
 ## 📁 Structure du dépôt
 
@@ -25,56 +25,144 @@ Ce dépôt contient les fichiers HTML individuels du **Référentiel APSAD D20 s
 pip install requests beautifulsoup4
 ```
 
-### Utilisation
+### 🎯 Deux versions disponibles
+
+#### Option 1 : Version complète (avec mise en page)
 
 ```bash
 python reconstruct_document.py
 ```
 
-### Résultat
+**Résultat** : `APSAD_D20_Document_Complet.html`
+- ✅ Préserve la mise en page originale (positions, styles CSS)
+- ✅ Fidèle au PDF d'origine
+- ⚠️ Fichier plus volumineux
+- 👁️ Idéal pour impression ou consultation identique à l'original
 
-Le script génère un fichier **`APSAD_D20_Document_Complet.html`** qui contient :
-- ✅ Tous les chapitres dans l'ordre
-- ✅ Toutes les annexes
-- ✅ Styles CSS préservés
-- ✅ Mise en page identique à l'original
-- ✅ Navigation par chapitres
+#### Option 2 : Version simplifiée (texte seul)
 
-## 🎯 Fonctionnement du script
+```bash
+python reconstruct_simple.py
+```
+
+**Résultat** : `APSAD_D20_Document_Simplifie.html`
+- ✅ Mise en page moderne et épurée
+- ✅ Table des matières interactive
+- ✅ Plus léger et rapide à charger
+- ✅ Meilleure lisibilité à l'écran
+- 📱 Responsive (adapté mobile/tablette)
+- 🔍 Texte facilement sélectionnable et recherchable
+
+## 🎯 Fonctionnement des scripts
+
+### Script complet (`reconstruct_document.py`)
 
 1. **Récupération** : Télécharge tous les fichiers HTML depuis GitHub
-2. **Extraction** : Extrait les `<div class="textLayer">` contenant le texte
+2. **Extraction** : Extrait les `<div class="textLayer">` avec leurs styles
 3. **Tri** : Ordonne les chapitres (Pages liminaires → Chapitres → Annexes)
-4. **Fusion** : Assemble tout dans un HTML unique
-5. **Styles** : Préserve la mise en page avec les CSS d'origine
+4. **Fusion** : Assemble tout dans un HTML avec styles inline
+5. **Génération** : Crée un document fidèle à la mise en page originale
 
-## 📄 Format du document reconstruit
+### Script simplifié (`reconstruct_simple.py`)
 
-Le document final inclut :
-- Une en-tête centrée avec le titre
-- Des séparateurs visuels entre chapitres
-- Chaque page du PDF original comme section
-- Styles CSS inline pour une mise en page fidèle
+1. **Récupération** : Télécharge tous les fichiers HTML depuis GitHub
+2. **Extraction** : Extrait uniquement le texte des `textLayer`
+3. **Nettoyage** : Supprime les styles de positionnement
+4. **Organisation** : Structure en chapitres avec table des matières
+5. **Génération** : Crée un document moderne et lisible
+
+## 📊 Comparaison des versions
+
+| Caractéristique | Version complète | Version simplifiée |
+|----------------|------------------|-------------------|
+| Taille fichier | 🔴 Volumineux (~5-10 MB) | 🟢 Léger (~1-2 MB) |
+| Fidélité originale | 🟢 Identique au PDF | 🟡 Structure préservée |
+| Lisibilité | 🟡 Comme le PDF | 🟢 Optimisée |
+| Recherche texte | 🟡 Moyenne | 🟢 Excellente |
+| Impression | 🟢 Parfaite | 🟢 Bonne |
+| Mobile | 🟡 Moyen | 🟢 Excellent |
+| Table des matières | ❌ Non | 🟢 Interactive |
+
+## 📝 Recommandations d'utilisation
+
+**Utilise la version complète si :**
+- Tu veux une reproduction exacte du PDF
+- Tu as besoin de l'aspect visuel original
+- Tu vas imprimer le document
+
+**Utilise la version simplifiée si :**
+- Tu veux consulter le document à l'écran
+- Tu as besoin de rechercher du texte rapidement
+- Tu veux un chargement rapide
+- Tu consultes sur mobile/tablette
 
 ## 🔍 Personnalisation
 
-Vous pouvez modifier le script pour :
-- Changer les styles CSS (variables dans `generate_complete_html()`)
-- Filtrer certains chapitres
-- Extraire seulement le texte brut
-- Générer d'autres formats (Markdown, PDF...)
+Les scripts sont modulables. Tu peux modifier :
+
+**Dans `reconstruct_document.py` :**
+- Les styles CSS dans `generate_complete_html()`
+- Les couleurs de chapitres
+- La mise en page des pages
+
+**Dans `reconstruct_simple.py` :**
+- Les styles CSS (couleurs, typographie)
+- La structure de la table des matières
+- Les séparateurs de pages
+
+## 🛠️ Exemples d'usage avancé
+
+### Extraire seulement certains chapitres
+
+```python
+# Dans main(), filtre les fichiers
+sorted_files = [f for f in sorted_files if 'Chapitre 2' in f['name']]
+```
+
+### Générer un fichier Markdown
+
+```python
+def extract_to_markdown(chapters_data):
+    md = "# APSAD D20\n\n"
+    for filename, pages in chapters_data.items():
+        title = create_chapter_title(filename)
+        md += f"## {title}\n\n"
+        for page in pages:
+            md += f"{page}\n\n"
+    return md
+```
+
+### Exporter en PDF
+
+```bash
+# Utilise wkhtmltopdf ou similar
+wkhtmltopdf APSAD_D20_Document_Simplifie.html APSAD_D20.pdf
+```
 
 ## ⚠️ Note légale
 
-Ce référentiel appartient au CNPP. L'utilisation de ces fichiers doit respecter les droits d'auteur et conditions d'utilisation du CNPP/APSAD.
+Ce référentiel appartient au **CNPP (Centre National de Prévention et de Protection)**. L'utilisation de ces fichiers doit respecter les droits d'auteur et conditions d'utilisation du CNPP/APSAD.
 
 ## 🤝 Contribution
 
-Pour toute amélioration du script de reconstruction, n'hésite pas à :
+Pour améliorer les scripts :
 1. Fork le dépôt
-2. Créer une branche
-3. Proposer une pull request
+2. Crée une branche (`git checkout -b feature/amelioration`)
+3. Commit tes changements (`git commit -m 'Amélioration XYZ'`)
+4. Push (`git push origin feature/amelioration`)
+5. Ouvre une Pull Request
+
+## 📞 Support
+
+Si tu rencontres des problèmes :
+1. Vérifie que tu as installé les dépendances
+2. Vérifie ta connexion internet (les scripts téléchargent depuis GitHub)
+3. Consulte les messages d'erreur détaillés
+
+## 📜 License
+
+Les scripts Python sont fournis "tels quels". Le contenu du référentiel APSAD D20 reste propriété du CNPP.
 
 ---
 
-*Document technique généré pour faciliter la consultation du référentiel APSAD D20*
+*Scripts de reconstruction créés pour faciliter la consultation du référentiel APSAD D20*
