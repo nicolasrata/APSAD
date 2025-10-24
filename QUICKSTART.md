@@ -1,61 +1,110 @@
 # 🚀 Guide de démarrage rapide
 
-## Installation en 3 étapes
+## ⚡ Solution RAPIDE (Recommandée)
 
-### 1️⃣ Clone le dépôt
+### 1️⃣ Télécharge le dépôt
 
+**Option A - Avec Git:**
 ```bash
 git clone https://github.com/nicolasrata/APSAD.git
 cd APSAD
 ```
+
+**Option B - Sans Git (plus simple):**
+1. Va sur https://github.com/nicolasrata/APSAD
+2. Clique sur le bouton vert **"Code"**
+3. Clique sur **"Download ZIP"**
+4. Décompresse le ZIP
+5. Ouvre un terminal dans le dossier décompressé
 
 ### 2️⃣ Installe les dépendances
 
 ```bash
-pip install -r requirements.txt
+pip install beautifulsoup4
 ```
 
 ### 3️⃣ Génère le document
 
-**Pour une version moderne et lisible :**
 ```bash
-python reconstruct_simple.py
+python reconstruct_local.py
 ```
 
-**Pour une version fidèle à l'original :**
-```bash
-python reconstruct_document.py
-```
+⚠️ **Important:** Les fichiers HTML doivent être dans le même dossier que le script !
 
 ## 📄 Résultat
 
-Les scripts créent des fichiers HTML que tu peux ouvrir avec n'importe quel navigateur :
+Le script crée `APSAD_D20_Document_Complet.html` dans le dossier courant.
 
-- `APSAD_D20_Document_Simplifie.html` - Version optimisée pour lecture
-- `APSAD_D20_Document_Complet.html` - Version avec mise en page originale
+**Pour le consulter:**
+- Double-clique sur le fichier HTML
+- Ou ouvre-le avec ton navigateur préféré
 
-## 🎯 Utilisation
+## 🔧 Solutions alternatives
 
-Double-clique simplement sur le fichier HTML généré pour l'ouvrir dans ton navigateur !
+### Si tu as des problèmes avec l'API GitHub
 
-## 💡 Astuce
+Utilise `reconstruct_local.py` qui fonctionne avec les fichiers locaux (pas besoin d'API).
 
-Pour une lecture confortable, utilise le mode lecture de ton navigateur (F9 dans Firefox, ou icône de livre dans la barre d'adresse).
+### Si tu veux utiliser l'API GitHub
 
-## ❓ Besoin d'aide ?
-
-Consulte le [README.md](README.md) complet pour plus de détails et d'options avancées.
-
-## 📱 Sur mobile
-
-Tu peux même lancer les scripts depuis Termux (Android) :
+Tu peux aussi utiliser les autres scripts, mais ils nécessitent que le repo soit public ou que tu configures un token GitHub :
 
 ```bash
-pkg install python git
-git clone https://github.com/nicolasrata/APSAD.git
-cd APSAD
-pip install -r requirements.txt
+# Configuration du token (si nécessaire)
+export GITHUB_TOKEN="ton_token_ici"
+
+# Puis lance
 python reconstruct_simple.py
 ```
 
+## 🎯 Utilisation
+
+Une fois le HTML généré :
+- 🔍 **Recherche** : Utilise Ctrl+F dans ton navigateur
+- 📱 **Mobile** : Le document s'adapte automatiquement
+- 🖨️ **Impression** : Utilise Ctrl+P (la mise en page est optimisée)
+- 🔖 **Table des matières** : Clique sur les liens pour naviguer
+
+## 💡 Astuce
+
+Pour une lecture confortable, utilise le mode lecture de ton navigateur :
+- **Firefox** : F9 ou icône de livre
+- **Chrome/Edge** : Extension "Reader View"
+- **Safari** : Icône de paragraphe dans la barre d'adresse
+
+## 🐛 Problèmes fréquents
+
+### "No module named 'bs4'"
+```bash
+pip install beautifulsoup4
+```
+
+### "Aucun fichier HTML trouvé"
+Assure-toi d'être dans le bon dossier (là où se trouvent les fichiers HTML du référentiel).
+
+### Erreur 404 avec l'API GitHub
+Utilise `reconstruct_local.py` à la place des autres scripts.
+
+## 📱 Sur mobile (Android)
+
+Tu peux même lancer les scripts depuis Termux :
+
+```bash
+# Installation de Termux depuis F-Droid ou Play Store
+pkg install python git
+git clone https://github.com/nicolasrata/APSAD.git
+cd APSAD
+pip install beautifulsoup4
+python reconstruct_local.py
+```
+
 Puis ouvre le fichier HTML avec ton navigateur mobile.
+
+## 📞 Besoin d'aide ?
+
+- 📖 [Documentation complète](README.md)
+- 🐛 [Signaler un problème](https://github.com/nicolasrata/APSAD/issues)
+
+---
+
+**Temps estimé:** 2-3 minutes ⏱️
