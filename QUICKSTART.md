@@ -1,6 +1,27 @@
 # 🚀 Guide de démarrage rapide
 
-## ⚡ Solution RAPIDE (Recommandée)
+## ⚡ Solution ULTRA-RAPIDE (1 clic)
+
+### Windows 🪟
+1. Télécharge le ZIP du dépôt
+2. Décompresse-le
+3. **Double-clique sur `generer_document.bat`**
+
+### Linux/Mac 🐧🍎
+1. Télécharge le ZIP du dépôt
+2. Décompresse-le
+3. Ouvre un terminal dans le dossier
+4. Lance :
+```bash
+chmod +x generer_document.sh
+./generer_document.sh
+```
+
+**C'est tout !** Le document HTML sera créé automatiquement. 🎉
+
+---
+
+## 📥 Solution standard (ligne de commande)
 
 ### 1️⃣ Télécharge le dépôt
 
@@ -36,58 +57,77 @@ python reconstruct_local.py
 Le script crée `APSAD_D20_Document_Complet.html` dans le dossier courant.
 
 **Pour le consulter:**
-- Double-clique sur le fichier HTML
-- Ou ouvre-le avec ton navigateur préféré
+- **Windows:** Double-clique sur le fichier HTML
+- **Linux:** `xdg-open APSAD_D20_Document_Complet.html`
+- **Mac:** `open APSAD_D20_Document_Complet.html`
 
 ## 🔧 Solutions alternatives
 
-### Si tu as des problèmes avec l'API GitHub
-
-Utilise `reconstruct_local.py` qui fonctionne avec les fichiers locaux (pas besoin d'API).
-
-### Si tu veux utiliser l'API GitHub
-
-Tu peux aussi utiliser les autres scripts, mais ils nécessitent que le repo soit public ou que tu configures un token GitHub :
+### Si tu veux télécharger depuis GitHub automatiquement
 
 ```bash
-# Configuration du token (si nécessaire)
-export GITHUB_TOKEN="ton_token_ici"
-
-# Puis lance
 python reconstruct_simple.py
 ```
 
-## 🎯 Utilisation
+⚠️ Nécessite que le repo soit public ou un token GitHub configuré.
+
+## 🎯 Utilisation du document
 
 Une fois le HTML généré :
-- 🔍 **Recherche** : Utilise Ctrl+F dans ton navigateur
+- 🔍 **Recherche** : Utilise Ctrl+F (Cmd+F sur Mac)
 - 📱 **Mobile** : Le document s'adapte automatiquement
 - 🖨️ **Impression** : Utilise Ctrl+P (la mise en page est optimisée)
-- 🔖 **Table des matières** : Clique sur les liens pour naviguer
+- 🔖 **Navigation** : Clique sur la table des matières pour sauter entre chapitres
 
-## 💡 Astuce
+## 💡 Astuces
 
+### Mode lecture
 Pour une lecture confortable, utilise le mode lecture de ton navigateur :
 - **Firefox** : F9 ou icône de livre
 - **Chrome/Edge** : Extension "Reader View"
 - **Safari** : Icône de paragraphe dans la barre d'adresse
 
+### Recherche avancée
+Pour chercher dans tout le document : Ctrl+F puis coche "Surligner tout" dans Firefox.
+
+### Impression en PDF
+Pour sauvegarder en PDF : Ctrl+P > Choisir "Imprimer vers PDF"
+
 ## 🐛 Problèmes fréquents
+
+### Windows : "python n'est pas reconnu"
+1. Installe Python depuis https://www.python.org/downloads/
+2. ⚠️ Coche "Add Python to PATH" pendant l'installation
+3. Redémarre ton terminal
 
 ### "No module named 'bs4'"
 ```bash
 pip install beautifulsoup4
 ```
 
+Si ça ne fonctionne pas :
+```bash
+python -m pip install beautifulsoup4
+```
+
 ### "Aucun fichier HTML trouvé"
 Assure-toi d'être dans le bon dossier (là où se trouvent les fichiers HTML du référentiel).
 
+Vérifie avec :
+- **Windows:** `dir *.html`
+- **Linux/Mac:** `ls *.html`
+
 ### Erreur 404 avec l'API GitHub
-Utilise `reconstruct_local.py` à la place des autres scripts.
+Utilise `reconstruct_local.py` ou le script batch/shell à la place.
+
+### Le fichier .sh n'est pas exécutable (Linux/Mac)
+```bash
+chmod +x generer_document.sh
+```
 
 ## 📱 Sur mobile (Android)
 
-Tu peux même lancer les scripts depuis Termux :
+Avec Termux (application gratuite) :
 
 ```bash
 # Installation de Termux depuis F-Droid ou Play Store
@@ -100,11 +140,20 @@ python reconstruct_local.py
 
 Puis ouvre le fichier HTML avec ton navigateur mobile.
 
+## ⏱️ Temps estimé
+
+- **Avec script automatique** : 30 secondes
+- **En ligne de commande** : 2-3 minutes
+- **Première fois (installation Python)** : 5-10 minutes
+
 ## 📞 Besoin d'aide ?
 
 - 📖 [Documentation complète](README.md)
 - 🐛 [Signaler un problème](https://github.com/nicolasrata/APSAD/issues)
+- 💬 Pose une question dans les Issues GitHub
 
 ---
 
-**Temps estimé:** 2-3 minutes ⏱️
+**Tu as réussi ? Génial ! 🎉**
+
+Ouvre maintenant `APSAD_D20_Document_Complet.html` dans ton navigateur et bonne lecture ! 📖
