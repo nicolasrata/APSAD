@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script de reconstruction LOCAL du document APSAD D20
-Fonctionne avec les fichiers HTML déjà téléchargés localement
+Script de reconstruction LOCAL du document APSAD D20 - VERSION CORRIGÉE
+Extraction améliorée du texte des textLayer
 """
 
 import os
@@ -14,17 +14,13 @@ def extract_chapter_number(filename):
     """Extrait le numéro de chapitre/annexe pour le tri"""
     basename = os.path.basename(filename)
     
-    # Pages liminaires = 0
     if "Pages liminaires" in basename:
         return (0, 0)
-    # Sommaire = 0.5
     if "Sommaire" in basename:
         return (0, 5)
-    # Chapitres 1-8
     match = re.search(r'; (\d+)\. ', basename)
     if match:
         return (1, int(match.group(1)))
-    # Annexes
     match = re.search(r'Annexe (\d+)', basename)
     if match:
         annexe_num = match.group(1)
@@ -40,23 +36,65 @@ def read_html_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
 
-def extract_text_only(html_content):
-    """Extrait uniquement le texte, sans les styles de position"""
+def extract_text_improved(html_content):
+    """
+    Extraction améliorée du texte des textLayer
+    Combine tous les div enfants pour former des paragraphes
+    """
     soup = BeautifulSoup(html_content, 'html.parser')
     text_layers = soup.find_all('div', class_='textLayer')
     
-    all_text = []
-    for layer in text_layers:
-        # Extraire le texte de tous les spans
-        text_parts = []
-        for span in layer.find_all('span'):
-            text = span.get_text(strip=True)
-            if text:
-                text_parts.append(text)
-        if text_parts:
-            all_text.append(' '.join(text_parts))
+    all_pages = []
     
-    return all_text
+    for layer in text_layers:
+        # Extraire tous les div qui contiennent du texte
+        divs = layer.find_all('div', recursive=False)
+        
+        if not divs:
+            continue
+            
+        # Regrouper le texte par position verticale (top)
+        lines = {}
+        for div in divs:
+            # Ignorer les div vides et ceux avec la classe endOfContent
+            if 'endOfContent' in div.get('class', []):
+                continue
+                
+            text = div.get_text(strip=True)
+            if not text:
+                continue
+            
+            # Extraire la position top du style
+            style = div.get('style', '')
+            top_match = re.search(r'top:([\d.]+)px', style)
+            
+            if top_match:
+                top = float(top_match.group(1))
+                # Arrondir à 5px près pour regrouper les éléments sur la même ligne
+                top_rounded = round(top / 5) * 5
+                
+                if top_rounded not in lines:
+                    lines[top_rounded] = []
+                lines[top_rounded].append(text)
+        
+        if lines:
+            # Trier les lignes par position verticale
+            sorted_lines = sorted(lines.items())
+            
+            # Construire le texte de la page
+            page_text = []
+            for _, texts in sorted_lines:
+                # Joindre les textes d'une même ligne
+                line_text = ' '.join(texts)
+                page_text.append(line_text)
+            
+            # Joindre toutes les lignes
+            full_text = '\n'.join(page_text)
+            
+            if full_text.strip():
+                all_pages.append(full_text)
+    
+    return all_pages
 
 def create_chapter_title(filename):
     """Crée un titre de section à partir du nom de fichier"""
@@ -67,8 +105,8 @@ def create_chapter_title(filename):
         return title
     return 'Section'
 
-def generate_simple_html(chapters_data):
-    """Génère un HTML épuré et lisible"""
+def generate_html(chapters_data):
+    """Génère le HTML final"""
     
     html = """<!DOCTYPE html>
 <html lang="fr">
@@ -90,7 +128,7 @@ def generate_simple_html(chapters_data):
             padding: 20px;
         }
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             background: white;
             padding: 40px;
@@ -127,15 +165,28 @@ def generate_simple_html(chapters_data):
         .chapter-content {
             padding: 20px 0;
         }
-        .page-break {
-            border-top: 1px dashed #ccc;
-            margin: 30px 0;
-            padding-top: 20px;
+        .page-separator {
+            border-top: 2px dashed #ccc;
+            margin: 40px 0;
+            position: relative;
+        }
+        .page-separator::after {
+            content: "• • •";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0 20px;
+            color: #999;
         }
         .page-text {
-            text-align: justify;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             color: #444;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
         }
         @media print {
             body {
@@ -174,6 +225,15 @@ def generate_simple_html(chapters_data):
         }
         .toc a:hover {
             color: #003366;
+            text-decoration: underline;
+        }
+        .stats {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 0.9em;
+            color: #666;
         }
     </style>
 </head>
@@ -192,17 +252,25 @@ def generate_simple_html(chapters_data):
             <ul>
 """
     
-    # Générer la table des matières
+    # Table des matières
     for filename in chapters_data.keys():
         title = create_chapter_title(filename)
         chapter_id = re.sub(r'[^a-z0-9]+', '-', title.lower())
-        html += f'                <li><a href="#{chapter_id}">{title}</a></li>\n'
+        num_pages = len(chapters_data[filename])
+        html += f'                <li><a href="#{chapter_id}">{title}</a> <span style="color:#999">({num_pages} pages)</span></li>\n'
     
     html += """            </ul>
         </div>
 """
     
-    # Ajouter le contenu de chaque chapitre
+    # Statistiques
+    total_pages = sum(len(pages) for pages in chapters_data.values())
+    html += f"""        <div class="stats">
+            📊 <strong>Statistiques:</strong> {len(chapters_data)} sections • {total_pages} pages extraites
+        </div>
+"""
+    
+    # Contenu des chapitres
     for filename, text_pages in chapters_data.items():
         title = create_chapter_title(filename)
         chapter_id = re.sub(r'[^a-z0-9]+', '-', title.lower())
@@ -215,8 +283,10 @@ def generate_simple_html(chapters_data):
         
         for i, text in enumerate(text_pages):
             if i > 0:
-                html += '                <div class="page-break"></div>\n'
-            html += f'                <div class="page-text">{text}</div>\n'
+                html += '                <div class="page-separator"></div>\n'
+            # Échapper les caractères HTML
+            text_escaped = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            html += f'                <div class="page-text">{text_escaped}</div>\n'
         
         html += """            </div>
         </div>
@@ -230,68 +300,63 @@ def generate_simple_html(chapters_data):
 
 def main():
     print("\n" + "="*70)
-    print("🔧 RECONSTRUCTION DOCUMENT APSAD D20 (Version locale)")
+    print("🔧 RECONSTRUCTION DOCUMENT APSAD D20 - VERSION CORRIGÉE")
     print("="*70 + "\n")
     
-    # 1. Chercher les fichiers HTML localement
-    print("📂 Recherche des fichiers HTML dans le dossier courant...")
+    # Chercher les fichiers HTML
+    print("📂 Recherche des fichiers HTML...")
     html_files = glob.glob("*.html")
-    
-    # Exclure les fichiers générés
     html_files = [f for f in html_files if not f.startswith('APSAD_D20_')]
     
     if not html_files:
         print("\n❌ Aucun fichier HTML trouvé!")
-        print("\n💡 Astuce: Assure-toi que les fichiers HTML sont dans le même")
-        print("   dossier que ce script Python.\n")
-        print("📥 Pour télécharger les fichiers:")
-        print("   1. Va sur https://github.com/nicolasrata/APSAD")
-        print("   2. Clique sur 'Code' > 'Download ZIP'")
-        print("   3. Décompresse et lance ce script\n")
+        print("\n💡 Assure-toi que les fichiers HTML sont dans le même dossier.\n")
         return
     
     print(f"   ✓ {len(html_files)} fichiers trouvés\n")
     
-    # 2. Trier les fichiers
-    print("📊 Tri des fichiers par ordre logique...")
+    # Trier
+    print("📊 Tri des fichiers...")
     sorted_files = sorted(html_files, key=extract_chapter_number)
     print("   ✓ Ordre établi\n")
     
-    # 3. Extraction
-    print("📖 Extraction du contenu...\n")
+    # Extraction
+    print("📖 Extraction du contenu (méthode améliorée)...\n")
     chapters_data = OrderedDict()
+    total_pages = 0
     
     for filepath in sorted_files:
         try:
             html_content = read_html_file(filepath)
-            text_pages = extract_text_only(html_content)
+            text_pages = extract_text_improved(html_content)
             
-            if text_pages:  # Seulement si du contenu a été extrait
+            if text_pages:
                 chapters_data[filepath] = text_pages
+                total_pages += len(text_pages)
                 print(f"   ✓ {len(text_pages)} pages extraites")
             else:
-                print(f"   ⚠️  Aucun contenu extrait (probablement pas un chapitre)")
+                print(f"   ⚠️  Aucun contenu extrait")
                 
         except Exception as e:
             print(f"   ✗ Erreur: {e}")
     
     if not chapters_data:
-        print("\n❌ Aucun contenu n'a pu être extrait!")
-        print("   Vérifie que les fichiers HTML contiennent des <div class='textLayer'>\n")
+        print("\n❌ Aucun contenu n'a pu être extrait!\n")
         return
     
-    # 4. Génération
-    print("\n📝 Génération du HTML final...")
-    final_html = generate_simple_html(chapters_data)
+    # Génération
+    print(f"\n📝 Génération du HTML final ({total_pages} pages totales)...")
+    final_html = generate_html(chapters_data)
     
-    # 5. Sauvegarde
+    # Sauvegarde
     output_file = "APSAD_D20_Document_Complet.html"
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(final_html)
     
     print(f"\n✅ Document créé : {output_file}")
     print(f"   📊 Taille : {len(final_html):,} caractères")
-    print(f"   📄 Chapitres : {len(chapters_data)}")
+    print(f"   📄 Sections : {len(chapters_data)}")
+    print(f"   📑 Pages : {total_pages}")
     print(f"\n🌐 Ouvre le fichier dans ton navigateur pour le consulter!")
     print("\n" + "="*70)
     print("✨ Terminé avec succès !")
