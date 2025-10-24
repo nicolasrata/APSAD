@@ -2,6 +2,8 @@
 
 Ce dépôt contient les fichiers HTML individuels du **Référentiel APSAD D20 sur les installations photovoltaïques**, ainsi que des scripts pour reconstruire le document complet.
 
+> 🚀 **Nouveau ?** Commence avec le [Guide de démarrage rapide](QUICKSTART.md) !
+
 ## 📁 Structure du dépôt
 
 - **Pages liminaires** : Page de garde, mentions légales
@@ -22,6 +24,12 @@ Ce dépôt contient les fichiers HTML individuels du **Référentiel APSAD D20 s
 ### Prérequis
 
 ```bash
+pip install -r requirements.txt
+```
+
+ou
+
+```bash
 pip install requests beautifulsoup4
 ```
 
@@ -39,7 +47,7 @@ python reconstruct_document.py
 - ⚠️ Fichier plus volumineux
 - 👁️ Idéal pour impression ou consultation identique à l'original
 
-#### Option 2 : Version simplifiée (texte seul)
+#### Option 2 : Version simplifiée (texte seul) - **RECOMMANDÉE** 
 
 ```bash
 python reconstruct_simple.py
@@ -82,6 +90,7 @@ python reconstruct_simple.py
 | Impression | 🟢 Parfaite | 🟢 Bonne |
 | Mobile | 🟡 Moyen | 🟢 Excellent |
 | Table des matières | ❌ Non | 🟢 Interactive |
+| **Recommandation** | Archive/impression | **Consultation** ⭐ |
 
 ## 📝 Recommandations d'utilisation
 
@@ -143,6 +152,8 @@ wkhtmltopdf APSAD_D20_Document_Simplifie.html APSAD_D20.pdf
 
 Ce référentiel appartient au **CNPP (Centre National de Prévention et de Protection)**. L'utilisation de ces fichiers doit respecter les droits d'auteur et conditions d'utilisation du CNPP/APSAD.
 
+Ces scripts sont fournis pour faciliter la consultation personnelle du document. Toute utilisation commerciale ou redistribution doit être autorisée par le CNPP.
+
 ## 🤝 Contribution
 
 Pour améliorer les scripts :
@@ -155,14 +166,21 @@ Pour améliorer les scripts :
 ## 📞 Support
 
 Si tu rencontres des problèmes :
-1. Vérifie que tu as installé les dépendances
+1. Vérifie que tu as installé les dépendances (`pip install -r requirements.txt`)
 2. Vérifie ta connexion internet (les scripts téléchargent depuis GitHub)
-3. Consulte les messages d'erreur détaillés
+3. Consulte les messages d'erreur détaillés dans la console
+4. Ouvre une issue sur GitHub si le problème persiste
 
 ## 📜 License
 
-Les scripts Python sont fournis "tels quels". Le contenu du référentiel APSAD D20 reste propriété du CNPP.
+Les scripts Python sont fournis "tels quels" sous licence MIT. Le contenu du référentiel APSAD D20 reste propriété du CNPP.
 
 ---
 
-*Scripts de reconstruction créés pour faciliter la consultation du référentiel APSAD D20*
+<div align="center">
+
+**Scripts de reconstruction créés pour faciliter la consultation du référentiel APSAD D20**
+
+[📖 Guide rapide](QUICKSTART.md) • [🐛 Signaler un bug](https://github.com/nicolasrata/APSAD/issues) • [💡 Demander une fonctionnalité](https://github.com/nicolasrata/APSAD/issues)
+
+</div>
