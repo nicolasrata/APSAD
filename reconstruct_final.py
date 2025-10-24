@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Script de reconstruction LOCAL - VERSION FINALE AVEC IMAGES
-Préserve les positions, force le texte visible ET inclut les images
+Script de reconstruction LOCAL - VERSION FINALE OPTIMALE
+Image de fond + texte transparent sélectionnable par-dessus
+Reproduit exactement la structure PDF
 """
 
 import os
@@ -9,7 +10,6 @@ import glob
 from bs4 import BeautifulSoup
 import re
 from collections import OrderedDict
-import base64
 
 def extract_chapter_number(filename):
     """Extrait le numéro de chapitre/annexe pour le tri"""
@@ -37,134 +37,98 @@ def read_html_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
 
-def extract_images_from_canvas(html_content):
+def extract_page_structure(html_content):
     """
-    Extrait les images des balises canvas (si présentes)
-    """
-    soup = BeautifulSoup(html_content, 'html.parser')
-    canvases = soup.find_all('canvas')
-    
-    images_html = []
-    for canvas in canvases:
-        # Récupérer les attributs du canvas
-        canvas_html = str(canvas)
-        images_html.append(canvas_html)
-    
-    return images_html
-
-def extract_images_from_img_tags(html_content):
-    """
-    Extrait les balises <img> présentes dans le HTML
-    """
-    soup = BeautifulSoup(html_content, 'html.parser')
-    images = soup.find_all('img')
-    
-    images_html = []
-    for img in images:
-        images_html.append(str(img))
-    
-    return images_html
-
-def extract_page_content(html_content):
-    """
-    Extrait le contenu complet d'une page : textLayer + images + canvas
+    Extrait la structure complète : canvas (image) + textLayer (texte transparent)
+    Garde le texte transparent pour qu'il soit sélectionnable mais invisible
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     
-    # Chercher les div qui contiennent le contenu d'une page
-    # Généralement dans des div avec classe 'page'
+    # Chercher les structures de page
     pages = soup.find_all('div', class_='page')
     
     if not pages:
-        # Si pas de div.page, chercher d'autres structures communes
+        # Chercher d'autres structures possibles
         pages = soup.find_all('div', id=re.compile(r'page\d+'))
     
-    pages_content = []
-    
-    for page in pages:
-        # Créer une copie de la page
-        page_copy = BeautifulSoup(str(page), 'html.parser')
-        
-        # Trouver le textLayer dans cette page
-        text_layer = page_copy.find('div', class_='textLayer')
-        
-        if text_layer:
-            # Forcer le texte visible dans le textLayer
-            for div in text_layer.find_all('div', recursive=False):
-                if 'endOfContent' in div.get('class', []):
-                    continue
-                
-                style = div.get('style', '')
-                style = re.sub(r'color:\s*transparent\s*;?', '', style)
-                
-                if 'color:' not in style:
-                    style += '; color: #000;'
-                else:
-                    style = re.sub(r'color:\s*[^;]+', 'color: #000', style)
-                
-                div['style'] = style
-        
-        # Récupérer tout le contenu de la page (textLayer + canvasWrapper + images)
-        page_html = str(page_copy)
-        
-        if len(page_html) > 100:
-            pages_content.append(page_html)
-    
-    return pages_content
-
-def extract_text_and_images(html_content):
-    """
-    Nouvelle méthode : extrait textLayer ET cherche les images/canvas
-    """
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # Méthode 1: Chercher les pages complètes
-    pages_content = extract_page_content(html_content)
-    if pages_content:
-        return pages_content
-    
-    # Méthode 2: Si pas de structure de page, extraire séparément
-    text_layers = soup.find_all('div', class_='textLayer')
-    canvas_wrappers = soup.find_all('div', class_='canvasWrapper')
+    if not pages:
+        # Essayer de reconstruire manuellement
+        return extract_manual_structure(soup)
     
     pages_html = []
     
-    # Combiner textLayer et canvasWrapper par paires
-    max_len = max(len(text_layers), len(canvas_wrappers))
-    
-    for i in range(max_len):
-        page_parts = []
+    for page in pages:
+        # Garder la page telle quelle, mais s'assurer que le textLayer est transparent
+        page_copy = BeautifulSoup(str(page), 'html.parser')
         
-        # Ajouter le canvas si présent
-        if i < len(canvas_wrappers):
-            canvas_html = str(canvas_wrappers[i])
-            page_parts.append(canvas_html)
+        # Trouver le textLayer
+        text_layer = page_copy.find('div', class_='textLayer')
         
-        # Ajouter le textLayer si présent
-        if i < len(text_layers):
-            text_layer = text_layers[i]
-            
-            # Forcer le texte visible
+        if text_layer:
+            # Garder le texte transparent mais sélectionnable
             for div in text_layer.find_all('div', recursive=False):
                 if 'endOfContent' in div.get('class', []):
                     continue
                 
                 style = div.get('style', '')
-                style = re.sub(r'color:\s*transparent\s*;?', '', style)
                 
+                # S'assurer que le texte est transparent
                 if 'color:' not in style:
-                    style += '; color: #000;'
-                else:
-                    style = re.sub(r'color:\s*[^;]+', 'color: #000', style)
+                    style += '; color: transparent;'
+                elif 'transparent' not in style:
+                    style = re.sub(r'color:\s*[^;]+', 'color: transparent', style)
                 
                 div['style'] = style
-            
-            text_html = str(text_layer)
-            page_parts.append(text_html)
         
-        if page_parts:
-            combined_html = '<div class="page-content">\n' + '\n'.join(page_parts) + '\n</div>'
-            pages_html.append(combined_html)
+        page_html = str(page_copy)
+        
+        if len(page_html) > 100:
+            pages_html.append(page_html)
+    
+    return pages_html
+
+def extract_manual_structure(soup):
+    """
+    Si pas de structure de page, reconstruire manuellement
+    """
+    canvas_wrappers = soup.find_all('div', class_='canvasWrapper')
+    text_layers = soup.find_all('div', class_='textLayer')
+    
+    pages_html = []
+    max_len = max(len(canvas_wrappers), len(text_layers))
+    
+    for i in range(max_len):
+        page_html = '<div class="page">\n'
+        
+        # Ajouter le canvas (image de fond)
+        if i < len(canvas_wrappers):
+            page_html += str(canvas_wrappers[i]) + '\n'
+        
+        # Ajouter le textLayer (texte transparent)
+        if i < len(text_layers):
+            text_layer = BeautifulSoup(str(text_layers[i]), 'html.parser').find('div', class_='textLayer')
+            
+            if text_layer:
+                # Garder le texte transparent
+                for div in text_layer.find_all('div', recursive=False):
+                    if 'endOfContent' in div.get('class', []):
+                        continue
+                    
+                    style = div.get('style', '')
+                    
+                    if 'color:' not in style:
+                        style += '; color: transparent;'
+                    elif 'transparent' not in style:
+                        style = re.sub(r'color:\s*[^;]+', 'color: transparent', style)
+                    
+                    div['style'] = style
+                
+                page_html += str(text_layer) + '\n'
+        
+        page_html += '</div>'
+        
+        if len(page_html) > 100:
+            pages_html.append(page_html)
     
     return pages_html
 
@@ -177,15 +141,15 @@ def create_chapter_title(filename):
         return title
     return 'Section'
 
-def generate_html_with_images(chapters_data):
-    """Génère le HTML avec mise en page, texte visible ET images"""
+def generate_html_pdf_style(chapters_data):
+    """Génère le HTML avec structure PDF : image + texte transparent"""
     
     html = """<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APSAD D20 - Document complet avec images</title>
+    <title>APSAD D20 - Document complet</title>
     <style>
         /* Styles de base */
         * {
@@ -240,14 +204,8 @@ def generate_html_with_images(chapters_data):
             margin: 40px auto;
             background: white;
             border: 1px solid #ddd;
-            padding: 40px 20px;
-            min-height: 900px;
+            padding: 20px;
             max-width: 900px;
-        }
-        .page-content {
-            position: relative;
-            width: 100%;
-            min-height: 800px;
         }
         .page-number {
             position: absolute;
@@ -256,63 +214,61 @@ def generate_html_with_images(chapters_data):
             color: #999;
             font-size: 0.9em;
             font-style: italic;
-            background: #f9f9f9;
+            background: rgba(249, 249, 249, 0.9);
             padding: 5px 10px;
             border-radius: 3px;
-            z-index: 10;
+            z-index: 100;
         }
         
-        /* Styles pour les canvas (images de fond) */
+        /* Structure de page : image + texte superposé */
+        .page {
+            position: relative;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        /* Canvas (image de fond) */
         .canvasWrapper {
             position: relative;
             width: 100%;
+            display: block;
         }
         .canvasWrapper canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
+            display: block;
             width: 100%;
             height: auto;
         }
         
-        /* Images */
-        img {
-            max-width: 100%;
-            height: auto;
-        }
-        
-        /* Styles des textLayer - FORCER LE TEXTE VISIBLE */
+        /* TextLayer (texte transparent par-dessus) */
         .textLayer {
-            position: relative;
+            position: absolute;
             left: 0;
             top: 0;
             right: 0;
             bottom: 0;
-            overflow: visible !important;
-            opacity: 1 !important;
-            line-height: 1.2;
-            min-height: 800px;
-            z-index: 2; /* Au-dessus des canvas */
+            overflow: hidden;
+            opacity: 1;
+            line-height: 1.0;
+            pointer-events: auto; /* Permettre la sélection */
         }
+        
         .textLayer > div {
-            color: #000 !important;
+            color: transparent; /* Texte invisible */
             position: absolute;
             white-space: pre;
             cursor: text;
             transform-origin: 0% 0%;
-            opacity: 1 !important;
         }
         
-        /* S'assurer que le texte est toujours visible */
-        .textLayer * {
-            color: #000 !important;
-            opacity: 1 !important;
+        /* Quand on sélectionne le texte, le montrer */
+        .textLayer > div::selection {
+            background: rgba(0, 100, 255, 0.3);
+            color: #000; /* Montrer le texte sélectionné */
         }
         
-        /* Styles pour la structure de page complète */
-        .page {
-            position: relative;
-            width: 100%;
+        .textLayer > div::-moz-selection {
+            background: rgba(0, 100, 255, 0.3);
+            color: #000;
         }
         
         @media print {
@@ -369,6 +325,17 @@ def generate_html_with_images(chapters_data):
         .stats strong {
             color: #003366;
         }
+        .info-box {
+            background: #fff8dc;
+            border-left: 4px solid #ffa500;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        .info-box p {
+            margin: 5px 0;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -377,8 +344,16 @@ def generate_html_with_images(chapters_data):
             <h1>Référentiel APSAD D20</h1>
             <p>Installations photovoltaïques</p>
             <p style="font-size: 0.9em; color: #999; margin-top: 10px;">
-                Document complet avec texte, mise en page et images
+                Document complet reconstruit
             </p>
+        </div>
+        
+        <div class="info-box">
+            <strong>ℹ️ Comment utiliser ce document :</strong>
+            <p>• Le texte est <strong>sélectionnable</strong> (mais invisible, il est par-dessus l'image)</p>
+            <p>• Utilisez <strong>Cmd+F</strong> pour rechercher du texte</p>
+            <p>• Quand vous sélectionnez, le texte devient visible (en bleu)</p>
+            <p>• Structure identique au PDF original : image + texte transparent</p>
         </div>
         
         <div class="toc">
@@ -400,7 +375,7 @@ def generate_html_with_images(chapters_data):
     # Statistiques
     total_pages = sum(len(pages) for pages in chapters_data.values())
     html += f"""        <div class="stats">
-            <strong>📊 Statistiques :</strong> {len(chapters_data)} sections • {total_pages} pages • Images incluses
+            <strong>📊 Statistiques :</strong> {len(chapters_data)} sections • {total_pages} pages
         </div>
 """
     
@@ -433,7 +408,8 @@ def generate_html_with_images(chapters_data):
 
 def main():
     print("\n" + "="*70)
-    print("🔧 RECONSTRUCTION APSAD D20 - VERSION FINALE AVEC IMAGES")
+    print("🔧 RECONSTRUCTION APSAD D20 - VERSION OPTIMALE")
+    print("   Structure PDF : Image de fond + Texte transparent sélectionnable")
     print("="*70 + "\n")
     
     # Chercher les fichiers HTML
@@ -454,19 +430,19 @@ def main():
     print("   ✓ Ordre établi\n")
     
     # Extraction
-    print("📖 Extraction : texte + images + mise en page...\n")
+    print("📖 Extraction structure PDF (image + texte transparent)...\n")
     chapters_data = OrderedDict()
     total_pages = 0
     
     for filepath in sorted_files:
         try:
             html_content = read_html_file(filepath)
-            pages_html = extract_text_and_images(html_content)
+            pages_html = extract_page_structure(html_content)
             
             if pages_html:
                 chapters_data[filepath] = pages_html
                 total_pages += len(pages_html)
-                print(f"   ✓ {len(pages_html)} pages extraites (texte + images)")
+                print(f"   ✓ {len(pages_html)} pages extraites")
             else:
                 print(f"   ⚠️  Aucun contenu extrait")
                 
@@ -478,8 +454,8 @@ def main():
         return
     
     # Génération
-    print(f"\n📝 Génération du HTML final ({total_pages} pages)...")
-    final_html = generate_html_with_images(chapters_data)
+    print(f"\n📝 Génération du HTML ({total_pages} pages)...")
+    final_html = generate_html_pdf_style(chapters_data)
     
     # Sauvegarde
     output_file = "APSAD_D20_Document_Final.html"
@@ -490,9 +466,11 @@ def main():
     print(f"   📊 Taille : {len(final_html):,} caractères")
     print(f"   📄 Sections : {len(chapters_data)}")
     print(f"   📑 Pages : {total_pages}")
-    print(f"   🎨 Texte visible + Mise en page + Images")
+    print(f"   🎨 Structure PDF : Image + Texte transparent sélectionnable")
     print(f"\n🌐 Ouvre le fichier :")
     print(f"   open {output_file}")
+    print(f"\n💡 Le texte est invisible mais sélectionnable !")
+    print(f"   Essaie de sélectionner du texte avec ta souris 🖱️")
     print("\n" + "="*70)
     print("✨ Terminé avec succès !")
     print("="*70 + "\n")
