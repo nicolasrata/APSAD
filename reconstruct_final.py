@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Script de reconstruction LOCAL - VERSION FINALE OPTIMALE
+Script de reconstruction LOCAL - VERSION FINALE OPTIMALE + EXPORT PDF
 Image de fond + texte transparent sélectionnable par-dessus
-Reproduit exactement la structure PDF + Filtre les pages vides
+Reproduit exactement la structure PDF + Filtre les pages vides + Export PDF
 """
 
 import os
@@ -340,6 +340,9 @@ def generate_html_pdf_style(chapters_data):
             .page-container {
                 page-break-inside: avoid;
             }
+            .info-box {
+                display: none; /* Masquer l'encart info à l'impression */
+            }
         }
         
         .toc {
@@ -462,9 +465,36 @@ def generate_html_pdf_style(chapters_data):
     
     return html
 
+def export_to_pdf(html_content, output_pdf):
+    """
+    Exporte le HTML en PDF avec texte sélectionnable
+    """
+    try:
+        from weasyprint import HTML, CSS
+        
+        print(f"\n📄 Génération du PDF...")
+        print(f"   ⏳ Cela peut prendre quelques minutes...")
+        
+        # Créer le PDF avec WeasyPrint
+        html_obj = HTML(string=html_content)
+        html_obj.write_pdf(output_pdf)
+        
+        return True
+        
+    except ImportError:
+        print(f"\n⚠️  WeasyPrint n'est pas installé.")
+        print(f"   Pour générer le PDF, installe WeasyPrint :")
+        print(f"   pip3 install weasyprint")
+        print(f"\n   Le fichier HTML a quand même été créé.")
+        return False
+    except Exception as e:
+        print(f"\n⚠️  Erreur lors de la génération du PDF : {e}")
+        print(f"   Le fichier HTML a quand même été créé.")
+        return False
+
 def main():
     print("\n" + "="*70)
-    print("🔧 RECONSTRUCTION APSAD D20 - VERSION FINALE OPTIMALE")
+    print("🔧 RECONSTRUCTION APSAD D20 - VERSION FINALE + EXPORT PDF")
     print("   Structure PDF : Image de fond + Texte transparent sélectionnable")
     print("   Filtrage automatique des pages vides")
     print("="*70 + "\n")
@@ -490,7 +520,6 @@ def main():
     print("📖 Extraction structure PDF (filtrage des pages vides)...\n")
     chapters_data = OrderedDict()
     total_pages = 0
-    total_skipped = 0
     
     for filepath in sorted_files:
         try:
@@ -511,28 +540,44 @@ def main():
         print("\n❌ Aucun contenu n'a pu être extrait!\n")
         return
     
-    # Génération
+    # Génération HTML
     print(f"\n📝 Génération du HTML ({total_pages} pages avec contenu)...")
     final_html = generate_html_pdf_style(chapters_data)
     
-    # Sauvegarde
-    output_file = "APSAD_D20_Document_Final.html"
-    with open(output_file, 'w', encoding='utf-8') as f:
+    # Sauvegarde HTML
+    output_html = "APSAD_D20_Document_Final.html"
+    with open(output_html, 'w', encoding='utf-8') as f:
         f.write(final_html)
     
-    print(f"\n✅ Document créé : {output_file}")
+    print(f"\n✅ Document HTML créé : {output_html}")
     print(f"   📊 Taille : {len(final_html):,} caractères")
     print(f"   📄 Sections : {len(chapters_data)}")
     print(f"   📑 Pages avec contenu : {total_pages}")
-    print(f"   🗑️  Pages vides supprimées automatiquement")
-    print(f"   🎨 Structure PDF : Image + Texte transparent sélectionnable")
-    print(f"\n🌐 Ouvre le fichier :")
-    print(f"   open {output_file}")
-    print(f"\n💡 Le texte est invisible mais sélectionnable !")
-    print(f"   Essaie de sélectionner du texte avec ta souris 🖱️")
-    print("\n" + "="*70)
-    print("✨ Terminé avec succès !")
-    print("="*70 + "\n")
+    
+    # Export PDF
+    output_pdf = "APSAD_D20_Document_Final.pdf"
+    pdf_success = export_to_pdf(final_html, output_pdf)
+    
+    if pdf_success:
+        file_size = os.path.getsize(output_pdf) / (1024 * 1024)  # Taille en MB
+        print(f"\n✅ Document PDF créé : {output_pdf}")
+        print(f"   📊 Taille : {file_size:.1f} MB")
+        print(f"   📝 Texte sélectionnable dans le PDF")
+    
+    # Résumé final
+    print(f"\n" + "="*70)
+    print(f"✨ Terminé avec succès !")
+    print(f"="*70)
+    print(f"\n📁 Fichiers générés :")
+    print(f"   • {output_html} (HTML)")
+    if pdf_success:
+        print(f"   • {output_pdf} (PDF avec texte sélectionnable)")
+    print(f"\n🌐 Pour ouvrir :")
+    print(f"   open {output_html}")
+    if pdf_success:
+        print(f"   open {output_pdf}")
+    print(f"\n💡 Le texte est invisible mais sélectionnable dans les deux formats !")
+    print("\n")
 
 if __name__ == "__main__":
     main()
