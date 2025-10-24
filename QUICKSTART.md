@@ -1,27 +1,40 @@
 # 🚀 Guide de démarrage rapide
 
-## ⚡ Solution ULTRA-RAPIDE (1 clic)
+## ⚡ Deux versions disponibles
 
-### Windows 🪟
-1. Télécharge le ZIP du dépôt
-2. Décompresse-le
-3. **Double-clique sur `generer_document.bat`**
+### Version 1 : Texte simple et lisible (recommandée) 📖
 
-### Linux/Mac 🐧🍎
-1. Télécharge le ZIP du dépôt
-2. Décompresse-le
-3. Ouvre un terminal dans le dossier
-4. Lance :
 ```bash
-chmod +x generer_document.sh
-./generer_document.sh
+python3 reconstruct_local.py
 ```
 
-**C'est tout !** Le document HTML sera créé automatiquement. 🎉
+**Résultat :** Document moderne et épuré avec le texte extrait  
+**Fichier généré :** `APSAD_D20_Document_Complet.html`
+
+**Avantages :**
+- ✅ Très lisible à l'écran
+- ✅ Texte facilement sélectionnable
+- ✅ Recherche efficace (Cmd+F)
+- ✅ Léger et rapide
+
+### Version 2 : Avec mise en page originale 🎨
+
+```bash
+python3 reconstruct_with_layout.py
+```
+
+**Résultat :** Document avec positions CSS et mise en page préservée  
+**Fichier généré :** `APSAD_D20_Document_Avec_Mise_En_Page.html`
+
+**Avantages :**
+- ✅ Fidèle au PDF original
+- ✅ Positions et alignements préservés
+- ✅ Aspect visuel identique
+- ✅ Bon pour l'impression
 
 ---
 
-## 📥 Solution standard (ligne de commande)
+## 📥 Installation rapide
 
 ### 1️⃣ Télécharge le dépôt
 
@@ -31,129 +44,127 @@ git clone https://github.com/nicolasrata/APSAD.git
 cd APSAD
 ```
 
-**Option B - Sans Git (plus simple):**
+**Option B - Sans Git (ZIP):**
 1. Va sur https://github.com/nicolasrata/APSAD
-2. Clique sur le bouton vert **"Code"**
-3. Clique sur **"Download ZIP"**
-4. Décompresse le ZIP
-5. Ouvre un terminal dans le dossier décompressé
+2. Clique sur **"Code"** > **"Download ZIP"**
+3. Décompresse le ZIP
+4. Ouvre un terminal dans le dossier
 
-### 2️⃣ Installe les dépendances
+### 2️⃣ Installe la dépendance
 
 ```bash
-pip install beautifulsoup4
+pip3 install beautifulsoup4
 ```
 
 ### 3️⃣ Génère le document
 
+**Pour un document lisible :**
 ```bash
-python reconstruct_local.py
+python3 reconstruct_local.py
 ```
 
-⚠️ **Important:** Les fichiers HTML doivent être dans le même dossier que le script !
-
-## 📄 Résultat
-
-Le script crée `APSAD_D20_Document_Complet.html` dans le dossier courant.
-
-**Pour le consulter:**
-- **Windows:** Double-clique sur le fichier HTML
-- **Linux:** `xdg-open APSAD_D20_Document_Complet.html`
-- **Mac:** `open APSAD_D20_Document_Complet.html`
-
-## 🔧 Solutions alternatives
-
-### Si tu veux télécharger depuis GitHub automatiquement
-
+**Pour conserver la mise en page :**
 ```bash
-python reconstruct_simple.py
+python3 reconstruct_with_layout.py
 ```
 
-⚠️ Nécessite que le repo soit public ou un token GitHub configuré.
+---
 
-## 🎯 Utilisation du document
+## 🍎 Sur macOS - Méthode automatique
 
-Une fois le HTML généré :
-- 🔍 **Recherche** : Utilise Ctrl+F (Cmd+F sur Mac)
-- 📱 **Mobile** : Le document s'adapte automatiquement
-- 🖨️ **Impression** : Utilise Ctrl+P (la mise en page est optimisée)
-- 🔖 **Navigation** : Clique sur la table des matières pour sauter entre chapitres
+```bash
+chmod +x generer_document.sh
+./generer_document.sh
+```
 
-## 💡 Astuces
+Le script fait tout automatiquement (utilise la version texte simple).
 
-### Mode lecture
-Pour une lecture confortable, utilise le mode lecture de ton navigateur :
-- **Firefox** : F9 ou icône de livre
-- **Chrome/Edge** : Extension "Reader View"
-- **Safari** : Icône de paragraphe dans la barre d'adresse
+---
 
-### Recherche avancée
-Pour chercher dans tout le document : Ctrl+F puis coche "Surligner tout" dans Firefox.
+## 📊 Comparaison des versions
 
-### Impression en PDF
-Pour sauvegarder en PDF : Ctrl+P > Choisir "Imprimer vers PDF"
+| Caractéristique | Version texte simple | Version avec mise en page |
+|----------------|---------------------|--------------------------|
+| Lisibilité | 🟢 Excellente | 🟡 Comme le PDF |
+| Fidélité visuelle | 🟡 Structure | 🟢 Identique |
+| Recherche texte | 🟢 Parfaite | 🟢 Bonne |
+| Poids fichier | 🟢 Léger | 🟡 Moyen |
+| Sélection texte | 🟢 Facile | 🟢 Bonne |
+| Impression | 🟢 Bonne | 🟢 Excellente |
+| **Recommandé pour** | Lecture | Archive/impression |
+
+---
+
+## 📄 Ouvrir le document généré
+
+```bash
+# Ouvrir automatiquement
+open APSAD_D20_Document_Complet.html
+
+# ou
+open APSAD_D20_Document_Avec_Mise_En_Page.html
+```
+
+Ou double-clique sur le fichier dans le Finder ! 🖱️
+
+---
 
 ## 🐛 Problèmes fréquents
 
-### Windows : "python n'est pas reconnu"
-1. Installe Python depuis https://www.python.org/downloads/
-2. ⚠️ Coche "Add Python to PATH" pendant l'installation
-3. Redémarre ton terminal
-
 ### "No module named 'bs4'"
 ```bash
-pip install beautifulsoup4
+pip3 install beautifulsoup4
 ```
 
 Si ça ne fonctionne pas :
 ```bash
-python -m pip install beautifulsoup4
+python3 -m pip install beautifulsoup4
 ```
 
 ### "Aucun fichier HTML trouvé"
-Assure-toi d'être dans le bon dossier (là où se trouvent les fichiers HTML du référentiel).
-
-Vérifie avec :
-- **Windows:** `dir *.html`
-- **Linux/Mac:** `ls *.html`
-
-### Erreur 404 avec l'API GitHub
-Utilise `reconstruct_local.py` ou le script batch/shell à la place.
-
-### Le fichier .sh n'est pas exécutable (Linux/Mac)
+Vérifie que tu es dans le bon dossier :
 ```bash
-chmod +x generer_document.sh
+ls *.html
 ```
 
-## 📱 Sur mobile (Android)
+Tu dois voir les fichiers du référentiel APSAD.
 
-Avec Termux (application gratuite) :
-
+### Le texte n'apparaît pas
+Utilise la **nouvelle version** :
 ```bash
-# Installation de Termux depuis F-Droid ou Play Store
-pkg install python git
-git clone https://github.com/nicolasrata/APSAD.git
-cd APSAD
-pip install beautifulsoup4
-python reconstruct_local.py
+python3 reconstruct_with_layout.py
 ```
 
-Puis ouvre le fichier HTML avec ton navigateur mobile.
+---
+
+## 🎯 Quelle version choisir ?
+
+**Utilise `reconstruct_local.py` si :**
+- Tu veux **lire** le document à l'écran
+- Tu vas faire des **recherches** dans le texte
+- Tu veux quelque chose de **moderne et épuré**
+
+**Utilise `reconstruct_with_layout.py` si :**
+- Tu veux l'**apparence exacte** du PDF
+- Tu vas **imprimer** le document
+- Tu as besoin des **positions précises**
+
+---
 
 ## ⏱️ Temps estimé
 
-- **Avec script automatique** : 30 secondes
-- **En ligne de commande** : 2-3 minutes
-- **Première fois (installation Python)** : 5-10 minutes
+- Installation des dépendances : **1 minute**
+- Génération du document : **30 secondes**
+- **Total : ~2 minutes** ⚡
+
+---
 
 ## 📞 Besoin d'aide ?
 
 - 📖 [Documentation complète](README.md)
+- 📂 [Liste des fichiers](FILES.md)
 - 🐛 [Signaler un problème](https://github.com/nicolasrata/APSAD/issues)
-- 💬 Pose une question dans les Issues GitHub
 
 ---
 
-**Tu as réussi ? Génial ! 🎉**
-
-Ouvre maintenant `APSAD_D20_Document_Complet.html` dans ton navigateur et bonne lecture ! 📖
+**Bonne lecture ! 📚✨**
