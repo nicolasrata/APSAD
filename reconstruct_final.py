@@ -2,7 +2,7 @@
 """
 Script de reconstruction LOCAL - VERSION FINALE OPTIMALE
 Image de fond + texte transparent sélectionnable par-dessus
-Reproduit exactement la structure PDF
+Reproduit exactement la structure PDF + Filtre les pages vides
 """
 
 import os
@@ -37,10 +37,36 @@ def read_html_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
 
+def has_text_content(text_layer):
+    """
+    Vérifie si un textLayer contient du texte réel (pas juste endOfContent)
+    """
+    if not text_layer:
+        return False
+    
+    # Trouver tous les div enfants
+    divs = text_layer.find_all('div', recursive=False)
+    
+    # Compter les divs avec du contenu réel
+    content_divs = 0
+    for div in divs:
+        # Ignorer les divs endOfContent
+        if 'endOfContent' in div.get('class', []):
+            continue
+        
+        # Vérifier si le div a du texte
+        text = div.get_text(strip=True)
+        if text:
+            content_divs += 1
+    
+    # La page a du contenu si au moins un div contient du texte
+    return content_divs > 0
+
 def extract_page_structure(html_content):
     """
     Extrait la structure complète : canvas (image) + textLayer (texte transparent)
     Garde le texte transparent pour qu'il soit sélectionnable mais invisible
+    Filtre les pages vides
     """
     soup = BeautifulSoup(html_content, 'html.parser')
     
@@ -56,8 +82,16 @@ def extract_page_structure(html_content):
         return extract_manual_structure(soup)
     
     pages_html = []
+    skipped_pages = 0
     
     for page in pages:
+        # Vérifier si la page contient du texte
+        text_layer = page.find('div', class_='textLayer')
+        
+        if not has_text_content(text_layer):
+            skipped_pages += 1
+            continue  # Sauter cette page vide
+        
         # Garder la page telle quelle, mais s'assurer que le textLayer est transparent
         page_copy = BeautifulSoup(str(page), 'html.parser')
         
@@ -85,19 +119,37 @@ def extract_page_structure(html_content):
         if len(page_html) > 100:
             pages_html.append(page_html)
     
+    if skipped_pages > 0:
+        print(f"      → {skipped_pages} pages vides ignorées")
+    
     return pages_html
 
 def extract_manual_structure(soup):
     """
     Si pas de structure de page, reconstruire manuellement
+    Filtre les pages vides
     """
     canvas_wrappers = soup.find_all('div', class_='canvasWrapper')
     text_layers = soup.find_all('div', class_='textLayer')
     
     pages_html = []
+    skipped_pages = 0
     max_len = max(len(canvas_wrappers), len(text_layers))
     
     for i in range(max_len):
+        # Vérifier si le textLayer de cette page contient du texte
+        if i < len(text_layers):
+            text_layer_soup = BeautifulSoup(str(text_layers[i]), 'html.parser')
+            text_layer = text_layer_soup.find('div', class_='textLayer')
+            
+            if not has_text_content(text_layer):
+                skipped_pages += 1
+                continue  # Sauter cette page vide
+        else:
+            # Pas de textLayer du tout
+            skipped_pages += 1
+            continue
+        
         page_html = '<div class="page">\n'
         
         # Ajouter le canvas (image de fond)
@@ -129,6 +181,9 @@ def extract_manual_structure(soup):
         
         if len(page_html) > 100:
             pages_html.append(page_html)
+    
+    if skipped_pages > 0:
+        print(f"      → {skipped_pages} pages vides ignorées")
     
     return pages_html
 
@@ -354,6 +409,7 @@ def generate_html_pdf_style(chapters_data):
             <p>• Utilisez <strong>Cmd+F</strong> pour rechercher du texte</p>
             <p>• Quand vous sélectionnez, le texte devient visible (en bleu)</p>
             <p>• Structure identique au PDF original : image + texte transparent</p>
+            <p>• Les pages vides ont été automatiquement supprimées</p>
         </div>
         
         <div class="toc">
@@ -375,7 +431,7 @@ def generate_html_pdf_style(chapters_data):
     # Statistiques
     total_pages = sum(len(pages) for pages in chapters_data.values())
     html += f"""        <div class="stats">
-            <strong>📊 Statistiques :</strong> {len(chapters_data)} sections • {total_pages} pages
+            <strong>📊 Statistiques :</strong> {len(chapters_data)} sections • {total_pages} pages avec contenu
         </div>
 """
     
@@ -408,8 +464,9 @@ def generate_html_pdf_style(chapters_data):
 
 def main():
     print("\n" + "="*70)
-    print("🔧 RECONSTRUCTION APSAD D20 - VERSION OPTIMALE")
+    print("🔧 RECONSTRUCTION APSAD D20 - VERSION FINALE OPTIMALE")
     print("   Structure PDF : Image de fond + Texte transparent sélectionnable")
+    print("   Filtrage automatique des pages vides")
     print("="*70 + "\n")
     
     # Chercher les fichiers HTML
@@ -430,9 +487,10 @@ def main():
     print("   ✓ Ordre établi\n")
     
     # Extraction
-    print("📖 Extraction structure PDF (image + texte transparent)...\n")
+    print("📖 Extraction structure PDF (filtrage des pages vides)...\n")
     chapters_data = OrderedDict()
     total_pages = 0
+    total_skipped = 0
     
     for filepath in sorted_files:
         try:
@@ -442,9 +500,9 @@ def main():
             if pages_html:
                 chapters_data[filepath] = pages_html
                 total_pages += len(pages_html)
-                print(f"   ✓ {len(pages_html)} pages extraites")
+                print(f"   ✓ {len(pages_html)} pages avec contenu extraites")
             else:
-                print(f"   ⚠️  Aucun contenu extrait")
+                print(f"   ⚠️  Aucun contenu (toutes les pages étaient vides)")
                 
         except Exception as e:
             print(f"   ✗ Erreur: {e}")
@@ -454,7 +512,7 @@ def main():
         return
     
     # Génération
-    print(f"\n📝 Génération du HTML ({total_pages} pages)...")
+    print(f"\n📝 Génération du HTML ({total_pages} pages avec contenu)...")
     final_html = generate_html_pdf_style(chapters_data)
     
     # Sauvegarde
@@ -465,7 +523,8 @@ def main():
     print(f"\n✅ Document créé : {output_file}")
     print(f"   📊 Taille : {len(final_html):,} caractères")
     print(f"   📄 Sections : {len(chapters_data)}")
-    print(f"   📑 Pages : {total_pages}")
+    print(f"   📑 Pages avec contenu : {total_pages}")
+    print(f"   🗑️  Pages vides supprimées automatiquement")
     print(f"   🎨 Structure PDF : Image + Texte transparent sélectionnable")
     print(f"\n🌐 Ouvre le fichier :")
     print(f"   open {output_file}")
